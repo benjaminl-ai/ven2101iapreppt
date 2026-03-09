@@ -201,7 +201,7 @@
     <div class="progress-container"><div class="progress-bar" id="v-progress"></div></div>
     <div class="game-status">
         <span>🏆 <b>Mastery Progress</b></span>
-        <span><b id="ko-count">0</b> / 32 ✅</span>
+        <span><b id="ko-count">0</b> / 29 ✅</span>
     </div>
     <span class="box-label">Verbs</span><div class="vocab-grid" id="grid-v"></div><br>
     <span class="box-label">Nouns</span><div class="vocab-grid" id="grid-n"></div><br>
@@ -237,7 +237,7 @@
         const saved = localStorage.getItem('vocab_ko_list_strict');
         if (saved) {
             const arr = JSON.parse(saved);
-            // 確保加載數據不會超過 32
+            // 確保加載數據不會超過 29
             koList = new Set(arr.slice(0, 29));
         }
         renderVocab('grid-v', vocabs.v);
@@ -373,7 +373,7 @@
         }
 
         if (isGame && isMatch) { 
-            // 再次檢查確保不會超過 32
+            // 再次檢查確保不會超過 29
             if (koList.size < 29) {
                 document.getElementById('v-' + target).classList.add('ko'); 
                 koList.add(target); 
