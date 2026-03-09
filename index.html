@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VEN2101 IA Prep Task Helper</title>
+    <style>
+        :root {
+            --primary: #000000; 
+            --bg: #e5e7eb;      
+            --white: #ffffff;
+            --accent: #f59e0b;
+            --dark: #1f2937;    
+            --success: #10b981; 
+            --error: #ef4444;   
+            --highlight: #facc15;
+        }
+        * { box-sizing: border-box; } 
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--dark); }
+        header { background: var(--dark); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--primary); }
+        
+        .main-tabs { display: flex; background: white; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: none; font-weight: bold; cursor: pointer; color: #6b7280; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        .container { padding: 15px; max-width: 100%; width: 850px; margin: 0 auto; display: none; padding-bottom: 180px; }
+        .container.active { display: block; }
+
+        .section-nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
+        .nav-item { padding: 10px; background: #d1d5db; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.8rem; color: var(--dark); }
+        .nav-item.active { background: var(--primary); color: white; }
+
+        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .box-label { font-weight: bold; color: var(--primary); font-size: 0.85rem; margin-bottom: 10px; display: block; background: #f3f4f6; padding: 5px 10px; border-radius: 5px; }
+
+        .input-guide { font-weight: bold; color: #666; margin: 10px 0 5px 0; display: block; font-size: 0.8rem; border-left: 3px solid var(--accent); padding-left: 8px; }
+
+        #det-date { 
+            display: inline-block; width: auto; min-width: 180px; padding: 8px 12px; margin: 10px 0; border: 3px solid var(--highlight); border-radius: 8px; background: #fff; font-size: 1rem; cursor: pointer; outline: none;
+        }
+
+        #det-fee {
+            width: 100px; padding: 8px; border: 3px solid var(--highlight); border-radius: 8px; font-size: 1rem; font-weight: bold; outline: none;
+        }
+
+        .exp-chip { display: block; background: #ffffff; padding: 12px; border-radius: 8px; font-size: 0.95rem; cursor: pointer; border: 2px solid #e2e8f0; margin-bottom: 8px; transition: 0.2s; color: var(--dark); }
+        .exp-chip:hover { border-color: var(--primary); background: #f8fafc; }
+        .exp-chip u { text-decoration: underline; font-weight: bold; }
+
+        .practice-zone { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: white; border: 4px solid var(--primary); border-radius: 15px; padding: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); width: calc(100% - 30px); max-width: 820px; z-index: 1000; }
+        textarea { width: 100%; height: 70px; border: none; font-size: 1.1rem; font-family: inherit; resize: none; outline: none; margin-bottom: 10px; display: block; color: var(--dark); }
+        .btn-group { display: flex; gap: 10px; }
+        .btn-action { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn-listen { background: #f1f5f9; color: #475569; }
+        
+        .btn-rec { background: #fee2e2; color: #b91c1c; transition: all 0.3s; }
+        .btn-rec.active { background: var(--error); color: white; animation: pulse-red 1.2s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        /* Progress Bar Fix */
+        .progress-container { background: #d1d5db; border-radius: 20px; height: 12px; margin-bottom: 15px; overflow: hidden; }
+        .progress-bar { background: var(--success); height: 100%; width: 0%; transition: width 0.5s ease; border-radius: 20px 0 0 20px; }
+        .game-status { background: var(--dark); color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+        .v-card { background: white; padding: 25px 5px; border-radius: 10px; border: 1px solid #ddd; text-align: center; cursor: pointer; transition: 0.2s; position: relative; font-weight: bold; font-size: 0.85rem; word-wrap: break-word; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 70px; color: var(--dark); }
+        .v-card.ko { background: var(--success); color: white; border-color: #059669; }
+
+        #v-practice-window { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: white; border: 4px solid var(--accent); border-radius: 20px; padding: 20px; z-index: 3000; box-shadow: 0 10px 40px rgba(0,0,0,0.3); text-align: center; }
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 4000; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; text-align: center; width: 85%; max-width: 350px; color: var(--dark); }
+    </style>
+</head>
+<body>
+
+<header><strong>VEN2101 IA Prep Task Helper (PT) </strong></header>
+
+<div class="main-tabs">
+    <button class="tab-btn active" onclick="switchTab('practice')">Expressions</button>
+    <button class="tab-btn" onclick="switchTab('vocab')">Vocab Challenge 🗣️</button>
+</div>
+
+<div id="practice" class="container active">
+    <div class="section-nav">
+        <button class="nav-item active" onclick="showSec(1)">1. Opening</button>
+        <button class="nav-item" onclick="showSec(2)">2. Purpose</button>
+        <button class="nav-item" onclick="showSec(3)">3. Details</button>
+        <button class="nav-item" onclick="showSec(4)">4. Offer</button>
+        <button class="nav-item" onclick="showSec(5)">5. Invitation</button>
+        <button class="nav-item" onclick="showSec(6)">6. Closing</button>
+    </div>
+
+    <div id="sec1" class="sec-content">
+        <div class="card"><span class="box-label">Greeting</span>
+            <div class="exp-chip" onclick="selectExp(this)">Hi, everybody!</div>
+            <div class="exp-chip" onclick="selectExp(this)">Good morning, everybody!</div>
+            <div class="exp-chip" onclick="selectExp(this)">Good afternoon, everybody!</div>
+        </div>
+        <div class="card"><span class="box-label">Welcome the Audience</span>
+            <div class="exp-chip" onclick="selectExp(this)">Thank you for coming to this briefing session.</div>
+            <div class="exp-chip" onclick="selectExp(this)">Thank you for coming today.</div>
+            <div class="exp-chip" onclick="selectExp(this)">Welcome to today’s briefing session.</div>
+        </div>
+        <div class="card"><span class="box-label">Introduction</span>
+            <div class="exp-chip" onclick="selectExp(this)">My name is [Name] and I’m the [Role] at [Company].</div>
+            <div class="exp-chip" onclick="selectExp(this)">I’m [Name], a [Role] at [Company].</div>
+        </div>
+    </div>
+
+    <div id="sec2" class="sec-content" style="display:none">
+        <div class="card"><span class="box-label">Purpose of Briefing</span>
+            <span class="input-guide">Choose Heading:</span>
+            <div class="exp-chip" onclick="selectPurpose('header', this)">Today, I’d like to introduce</div>
+            <div class="exp-chip" onclick="selectPurpose('header', this)">May I take this opportunity today to introduce</div>
+            <span class="input-guide">Choose Topic:</span>
+            <div class="exp-chip" onclick="selectPurpose('topic', this)">a new <u><b>T-shirt printing service</b></u> to you.</div>
+            <div class="exp-chip" onclick="selectPurpose('topic', this)">a new <u><b>snack vending machine</b></u> to you.</div>
+            <div class="exp-chip" onclick="selectPurpose('topic', this)">a new <u><b>car wash service</b></u> to you.</div>
+            <div class="exp-chip" onclick="selectPurpose('topic', this)">a new <u><b>pet sitting service</b></u> to you.</div>
+        </div>
+    </div>
+
+    <div id="sec3" class="sec-content" style="display:none">
+        <div class="card"><span class="box-label">1. Date & Name</span>
+            <span class="input-guide">Select Starting Date:</span>
+            <input type="date" id="det-date" onchange="updateDetailSentences()">
+            <div class="exp-chip" id="sent-hw" onclick="selectExp(this)">Starting from [Date], we’ll have a new service called '<u><b>Smart Tees</b></u>'.</div>
+            <div class="exp-chip" id="sent-be" onclick="selectExp(this)">Starting from [Date], we’ll have a new vending machine called '<u><b>Snack It</b></u>'.</div>
+            <div class="exp-chip" id="sent-rc" onclick="selectExp(this)">Starting from [Date], we’ll have a new service called '<u><b>Eco Wheels Wash</b></u>'.</div>
+            <div class="exp-chip" id="sent-ac" onclick="selectExp(this)">Starting from [Date], we’ll have a new service called '<u><b>Little Paws Care</b></u>'.</div>
+        </div>
+        <div class="card"><span class="box-label">2. Fee</span>
+            <span class="input-guide">Enter Fee ($):</span>
+            <input type="number" id="det-fee" value="500" onchange="updateDetailSentences()">
+            <div class="exp-chip" id="sent-fee" onclick="selectExp(this)" style="margin-top:10px;">The fee is 500 dollars.</div>
+        </div>
+        <div class="card"><span class="box-label">3. Enquiries</span>
+            <span class="input-guide">Choose Heading:</span>
+            <div class="exp-chip" onclick="selectInfo('header', this)">For more information,</div>
+            <div class="exp-chip" onclick="selectInfo('header', this)">For more details,</div>
+            <div class="exp-chip" onclick="selectInfo('header', this)">For enquiries,</div>
+            <span class="input-guide">Choose Action:</span>
+            <div class="exp-chip" onclick="selectInfo('action', this)">please call our hotline.</div>
+            <div class="exp-chip" onclick="selectInfo('action', this)">please visit our website.</div>
+            <div class="exp-chip" onclick="selectInfo('action', this)">please refer to our TV ad.</div>
+        </div>
+    </div>
+
+    <div id="sec4" class="sec-content" style="display:none">
+        <div class="card"><span class="box-label">Special Offer</span>
+            <span class="input-guide">Choose Condition:</span>
+            <div class="exp-chip" onclick="selectOffer('cond', this)">If you print our tee this month,</div>
+            <div class="exp-chip" onclick="selectOffer('cond', this)">If you register for our service now,</div>
+            <div class="exp-chip" onclick="selectOffer('cond', this)">If you purchase any snack from the machine today,</div>
+            <span class="input-guide">Choose Offer:</span>
+            <div class="exp-chip" onclick="selectOffer('offer', this)">we'll offer you a $20 voucher.</div>
+            <div class="exp-chip" onclick="selectOffer('offer', this)">we'll offer you a 10% discount.</div>
+            <div class="exp-chip" onclick="selectOffer('offer', this)">we'll offer you a free gift.</div>
+        </div>
+    </div>
+
+    <div id="sec5" class="sec-content" style="display:none">
+        <div class="card"><span class="box-label">1. Invitation</span>
+            <div class="exp-chip" onclick="selectExp(this)">I’d like to invite you to our trial class.</div>
+            <div class="exp-chip" onclick="selectExp(this)">I’d like to invite you to our demonstration.</div>
+            <div class="exp-chip" onclick="selectExp(this)">I’d like to invite you to our taster session.</div>
+            <div class="exp-chip" onclick="selectExp(this)">I’d like to invite you to our pop-up store.</div>
+        </div>
+        <div class="card"><span class="box-label">2. Sign Up</span>
+            <div class="exp-chip" onclick="selectExp(this)">If you’re interested, please sign up at our counter.</div>
+            <div class="exp-chip" onclick="selectExp(this)">If you’re interested, please sign up on our website.</div>
+            <div class="exp-chip" onclick="selectExp(this)">If you’re interested, please sign up at our booth.</div>
+        </div>
+    </div>
+
+    <div id="sec6" class="sec-content" style="display:none">
+        <div class="card"><span class="box-label">Closing Remark</span>
+            <div class="exp-chip" onclick="selectExp(this)">That’s the end of my briefing.</div>
+            <div class="exp-chip" onclick="selectExp(this)">That’s all for my briefing.</div>
+        </div>
+        <div class="card"><span class="box-label">Thanking</span>
+            <div class="exp-chip" onclick="selectExp(this)">Thank you for listening.</div>
+            <div class="exp-chip" onclick="selectExp(this)">Thank you very much for your attention.</div>
+        </div>
+        <div class="card"><span class="box-label">Questions</span>
+            <div class="exp-chip" onclick="selectExp(this)">Do you have any questions?</div>
+            <div class="exp-chip" onclick="selectExp(this)">I’d be glad to answer any questions you might have.</div>
+        </div>
+    </div>
+
+    <div class="practice-zone">
+        <textarea id="practice-text" placeholder="Click any phrase..."></textarea>
+        <div class="btn-group">
+            <button class="btn-action btn-listen" onclick="speakText()">🔊 Listen</button>
+            <button class="btn-action btn-rec" id="main-rec-btn" onclick="handleRecClick(this, false)">🎤 Start Recording</button>
+        </div>
+    </div>
+</div>
+
+<div id="vocab" class="container">
+    <div class="progress-container"><div class="progress-bar" id="v-progress"></div></div>
+    <div class="game-status">
+        <span>🏆 <b>Mastery Progress</b></span>
+        <span><b id="ko-count">0</b> / 32 ✅</span>
+    </div>
+    <span class="box-label">Verbs</span><div class="vocab-grid" id="grid-v"></div><br>
+    <span class="box-label">Nouns</span><div class="vocab-grid" id="grid-n"></div><br>
+    <span class="box-label">Adjectives</span><div class="vocab-grid" id="grid-a"></div>
+</div>
+
+<div id="v-practice-window">
+    <span class="v-practice-title" id="v-active-word" style="font-size: 1.8rem; font-weight: 800; color: var(--dark); margin-bottom: 15px; display: block;">Word</span>
+    <div class="btn-group">
+        <button class="btn-action btn-listen" onclick="speakActive()">🔊 Listen</button>
+        <button class="btn-action btn-rec" id="v-rec-btn" onclick="handleRecClick(this, true)">🎤 Record</button>
+    </div>
+    <button style="margin-top:15px; width:100%; padding:10px; background:#eee; border:none; border-radius:8px; font-weight:bold; cursor:pointer; color: var(--dark);" onclick="closePractice()">Close</button>
+</div>
+
+<div id="modal"><div class="modal-content"><div id="m-icon" style="font-size:3rem"></div><h2 id="m-title"></h2><p id="m-msg"></p><button onclick="closeModal()">Next</button></div></div>
+
+<script>
+    const vocabs = {
+        v: ["create", "print", "purchase", "register", "sign up"],
+        n: ["booth", "care", "counter", "demonstration", "discount", "expo", "feature", "highlight", "hotline", "materials", "options", "products", "travellers", "trial", "tv ad", "vegetables", "voucher", "website"],
+        a: ["creative", "eco-friendly", "executive", "healthy", "smart", "special"]
+    };
+
+    let koList = new Set();
+    let currentWord = "";
+    let combos = { purpose: { header: "", topic: "" }, info: { header: "", action: "" }, offer: { cond: "", offer: "" } };
+    let recognition;
+    let isRecording = false;
+    let lastHeard = "";
+
+    function init() {
+        const saved = localStorage.getItem('vocab_ko_list_strict');
+        if (saved) {
+            const arr = JSON.parse(saved);
+            // 確保加載數據不會超過 32
+            koList = new Set(arr.slice(0, 29));
+        }
+        renderVocab('grid-v', vocabs.v);
+        renderVocab('grid-n', vocabs.n);
+        renderVocab('grid-a', vocabs.a);
+        updateProgress();
+    }
+
+    function renderVocab(id, list) {
+        document.getElementById(id).innerHTML = list.map(v => `
+            <div class="v-card ${koList.has(v) ? 'ko' : ''}" id="v-${v}" onclick="openPractice('${v}')">
+                ${v}
+            </div>
+        `).join('');
+    }
+
+    function openPractice(word) {
+        currentWord = word;
+        document.getElementById('v-active-word').innerText = word;
+        document.getElementById('v-practice-window').style.display = 'block';
+    }
+
+    function closePractice() {
+        if(isRecording) stopRecordingManual();
+        document.getElementById('v-practice-window').style.display = 'none';
+        currentWord = "";
+    }
+
+    function updateProgress() {
+        const total = 29;
+        // 邏輯修復：強制 koList 數量不超過 total
+        let count = koList.size;
+        if (count > total) count = total;
+        
+        document.getElementById('ko-count').innerText = count;
+        document.getElementById('v-progress').style.width = (count / total * 100) + "%";
+        localStorage.setItem('vocab_ko_list_strict', JSON.stringify(Array.from(koList).slice(0, total)));
+    }
+
+    function switchTab(id) {
+        document.querySelectorAll('.container, .tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        event.target.classList.add('active');
+        closePractice();
+    }
+
+    function showSec(num) {
+        document.querySelectorAll('.sec-content, .nav-item').forEach(el => {
+            if(el.classList.contains('sec-content')) el.style.display = 'none';
+            else el.classList.remove('active');
+        });
+        document.getElementById('sec'+num).style.display = 'block';
+        event.target.classList.add('active');
+    }
+
+    function selectExp(el) { document.getElementById('practice-text').value = el.innerText; }
+    function selectPurpose(type, el) { combos.purpose[type] = el.innerText; document.getElementById('practice-text').value = (combos.purpose.header + " " + combos.purpose.topic).trim(); }
+    function selectInfo(type, el) { combos.info[type] = el.innerText; document.getElementById('practice-text').value = (combos.info.header + " " + combos.info.action).trim(); }
+    function selectOffer(type, el) { combos.offer[type] = el.innerText; document.getElementById('practice-text').value = (combos.offer.cond + " " + combos.offer.offer).trim(); }
+
+    function updateDetailSentences() {
+        const d = document.getElementById('det-date').value;
+        const f = document.getElementById('det-fee').value;
+        const dateStr = d ? new Date(d).toLocaleDateString('en-GB', {day:'numeric', month:'long'}) : "[Date]";
+        document.getElementById('sent-hw').innerHTML = `Starting from ${dateStr}, we’ll have a new service called '<u><b>Smart Tees</b></u>'.`;
+        document.getElementById('sent-be').innerHTML = `Starting from ${dateStr}, we’ll have a new vending machine called '<u><b>Snack It</b></u>'.`;
+        document.getElementById('sent-rc').innerHTML = `Starting from ${dateStr}, we’ll have a new service called '<u><b>Eco Wheels Wash</b></u>'.`;
+        document.getElementById('sent-ac').innerHTML = `Starting from ${dateStr}, we’ll have a new service called '<u><b>Little Paws Care</b></u>'.`;
+        document.getElementById('sent-fee').innerText = `The fee is ${f} dollars.`;
+    }
+
+    function speak(t) {
+        window.speechSynthesis.cancel();
+        const m = new SpeechSynthesisUtterance(t);
+        m.lang = 'en-US'; m.rate = 0.85;
+        window.speechSynthesis.speak(m);
+    }
+    function speakText() { speak(document.getElementById('practice-text').value); }
+    function speakActive() { speak(currentWord); }
+
+    function handleRecClick(btn, isGame) {
+        if (!isRecording) startRecordingManual(btn, isGame);
+        else stopRecordingManual();
+    }
+
+    function startRecordingManual(btn, isGame) {
+        const target = isGame ? currentWord : document.getElementById('practice-text').value;
+        if (!target) return;
+        const Rec = window.webkitSpeechRecognition || window.SpeechRecognition;
+        if (!Rec) return alert("Browser not supported.");
+        lastHeard = "";
+        recognition = new Rec();
+        recognition.lang = 'en-US';
+        recognition.interimResults = true;
+        recognition.continuous = true;
+        recognition.onstart = () => { isRecording = true; btn.classList.add('active'); btn.innerText = "🛑 Stop & Check"; };
+        recognition.onresult = (e) => { lastHeard = Array.from(e.results).map(r => r[0].transcript).join('').toLowerCase().trim(); };
+        recognition.onerror = () => stopRecordingManual();
+        recognition.start();
+    }
+
+    function stopRecordingManual() {
+        if (!recognition) return;
+        recognition.stop();
+        isRecording = false;
+        document.querySelectorAll('.btn-rec').forEach(b => {
+            b.classList.remove('active');
+            b.innerText = b.id === 'main-rec-btn' ? "🎤 Start Recording" : "🎤 Record";
+        });
+        analyzeVoice();
+    }
+
+    function analyzeVoice() {
+        const isGame = document.getElementById('vocab').classList.contains('active') || document.getElementById('v-practice-window').style.display === 'block';
+        const target = isGame ? currentWord : document.getElementById('practice-text').value;
+        const targetLower = target.toLowerCase().trim();
+        let heardLower = lastHeard.toLowerCase().trim();
+        
+        // 模糊匹配邏輯
+        const synonyms = { "materials": "material", "travellers": "travelers", "vegetables": "vegetable", "healthy": "health", "options": "option"};
+        for (let key in synonyms) {
+            if ((targetLower.includes(key) && heardLower.includes(synonyms[key])) || (targetLower.includes(synonyms[key]) && heardLower.includes(key))) {
+                heardLower = heardLower.replace(synonyms[key], key);
+            }
+        }
+
+        let isMatch = false;
+        if (isGame) { 
+            isMatch = (heardLower === targetLower || heardLower.includes(targetLower)); 
+        } else { 
+            const firstWord = targetLower.split(' ')[0]; 
+            isMatch = heardLower.includes(firstWord) && heardLower.length > (targetLower.length * 0.4); 
+        }
+
+        if (isGame && isMatch) { 
+            // 再次檢查確保不會超過 32
+            if (koList.size < 29) {
+                document.getElementById('v-' + target).classList.add('ko'); 
+                koList.add(target); 
+                updateProgress(); 
+            }
+        }
+        
+        showModal(isMatch, lastHeard || "(No sound)", target);
+    }
+
+    function showModal(isOk, heard, target) {
+        // 情緒價值滿滿的鼓勵語
+        const compliments = ["AMAZING! 🌟", "YOU'RE A PRO! 🏆", "ABSOLUTELY PERFECT! 🔥", "INSPIRING! ✨", "OUTSTANDING! 💎", "YOU'VE GOT THIS! 🚀"];
+        const randomEncouragement = compliments[Math.floor(Math.random() * compliments.length)];
+        
+        document.getElementById('modal').style.display = 'flex';
+        document.getElementById('m-icon').innerText = isOk ? "🎉" : "❌";
+        document.getElementById('m-title').innerText = isOk ? "Brilliant!" : "Try Again";
+        
+        if (isOk) {
+            document.getElementById('m-msg').innerHTML = `<b style="font-size: 1.6rem; color: #10b981; display: block; margin: 10px 0;">${randomEncouragement}</b><span style="color: #666;">Your pronunciation is spot on!</span>`;
+        } else {
+            document.getElementById('m-msg').innerHTML = `我聽到: "<b>${heard}</b>"<br>應該是: "<b>${target}</b>"`;
+        }
+    }
+
+    function closeModal() { document.getElementById('modal').style.display = 'none'; }
+    window.onload = init;
+</script>
+</body>
+</html>
