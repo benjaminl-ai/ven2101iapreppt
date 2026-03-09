@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VEN2101 IA Prep Task Helper</title>
+    <title>VEN2101 IA Prep Task Helper (PT)</title>
     <style>
         :root {
             --primary: #000000; 
@@ -57,14 +57,19 @@
         .btn-rec.active { background: var(--error); color: white; animation: pulse-red 1.2s infinite; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* Progress Bar Fix */
-        .progress-container { background: #d1d5db; border-radius: 20px; height: 12px; margin-bottom: 15px; overflow: hidden; }
+        /* Progress Styling */
+        .progress-container { background: #d1d5db; border-radius: 20px; height: 12px; margin-bottom: 10px; overflow: hidden; }
         .progress-bar { background: var(--success); height: 100%; width: 0%; transition: width 0.5s ease; border-radius: 20px 0 0 20px; }
+        
+        /* Reset Button Style */
+        .reset-btn { background: #9ca3af; color: white; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; margin-bottom: 15px; transition: 0.2s; }
+        .reset-btn:hover { background: var(--error); }
+
         .game-status { background: var(--dark); color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         
         .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
         .v-card { background: white; padding: 25px 5px; border-radius: 10px; border: 1px solid #ddd; text-align: center; cursor: pointer; transition: 0.2s; position: relative; font-weight: bold; font-size: 0.85rem; word-wrap: break-word; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 70px; color: var(--dark); }
-        .v-card.ko { background: var(--success); color: white; border-color: #059669; }
+        .v-card.ko { background: var(--success) !important; color: white !important; border-color: #059669 !important; }
 
         #v-practice-window { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: white; border: 4px solid var(--accent); border-radius: 20px; padding: 20px; z-index: 3000; box-shadow: 0 10px 40px rgba(0,0,0,0.3); text-align: center; }
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 4000; align-items: center; justify-content: center; }
@@ -73,7 +78,7 @@
 </head>
 <body>
 
-<header><strong>VEN2101 IA Prep Task Helper (PT) </strong></header>
+<header><strong>VEN2101 IA Prep Task Helper (PT)</strong></header>
 
 <div class="main-tabs">
     <button class="tab-btn active" onclick="switchTab('practice')">Expressions</button>
@@ -199,9 +204,11 @@
 
 <div id="vocab" class="container">
     <div class="progress-container"><div class="progress-bar" id="v-progress"></div></div>
+    <button class="reset-btn" onclick="resetProgress()">↺ Reset All Progress</button>
+    
     <div class="game-status">
         <span>🏆 <b>Mastery Progress</b></span>
-        <span><b id="ko-count">0</b> / 29 ✅</span>
+        <span><b id="ko-count">0</b> / <span id="total-count">0</span> ✅</span>
     </div>
     <span class="box-label">Verbs</span><div class="vocab-grid" id="grid-v"></div><br>
     <span class="box-label">Nouns</span><div class="vocab-grid" id="grid-n"></div><br>
@@ -226,6 +233,8 @@
         a: ["creative", "eco-friendly", "executive", "healthy", "smart", "special"]
     };
 
+    // 1. 動態總數計算
+    const TOTAL_WORDS = Object.values(vocabs).flat().length;
     let koList = new Set();
     let currentWord = "";
     let combos = { purpose: { header: "", topic: "" }, info: { header: "", action: "" }, offer: { cond: "", offer: "" } };
@@ -234,16 +243,28 @@
     let lastHeard = "";
 
     function init() {
+        document.getElementById('total-count').innerText = TOTAL_WORDS;
         const saved = localStorage.getItem('vocab_ko_list_strict');
         if (saved) {
-            const arr = JSON.parse(saved);
-            // 確保加載數據不會超過 29
-            koList = new Set(arr.slice(0, 29));
+            try {
+                const arr = JSON.parse(saved);
+                koList = new Set(arr);
+            } catch(e) { koList = new Set(); }
         }
         renderVocab('grid-v', vocabs.v);
         renderVocab('grid-n', vocabs.n);
         renderVocab('grid-a', vocabs.a);
         updateProgress();
+    }
+
+    // 4. 重置功能
+    function resetProgress() {
+        if(confirm("Are you sure you want to clear all progress? This cannot be undone.")) {
+            koList.clear();
+            localStorage.removeItem('vocab_ko_list_strict');
+            document.querySelectorAll('.v-card').forEach(card => card.classList.remove('ko'));
+            updateProgress();
+        }
     }
 
     function renderVocab(id, list) {
@@ -266,15 +287,12 @@
         currentWord = "";
     }
 
+    // 2 & 3. 存儲與 UI 同步刷新
     function updateProgress() {
-        const total = 29;
-        // 邏輯修復：強制 koList 數量不超過 total
-        let count = koList.size;
-        if (count > total) count = total;
-        
+        const count = koList.size;
         document.getElementById('ko-count').innerText = count;
-        document.getElementById('v-progress').style.width = (count / total * 100) + "%";
-        localStorage.setItem('vocab_ko_list_strict', JSON.stringify(Array.from(koList).slice(0, total)));
+        document.getElementById('v-progress').style.width = (count / TOTAL_WORDS * 100) + "%";
+        localStorage.setItem('vocab_ko_list_strict', JSON.stringify(Array.from(koList)));
     }
 
     function switchTab(id) {
@@ -356,7 +374,6 @@
         const targetLower = target.toLowerCase().trim();
         let heardLower = lastHeard.toLowerCase().trim();
         
-        // 模糊匹配邏輯
         const synonyms = { "materials": "material", "travellers": "travelers", "vegetables": "vegetable", "healthy": "health", "options": "option"};
         for (let key in synonyms) {
             if ((targetLower.includes(key) && heardLower.includes(synonyms[key])) || (targetLower.includes(synonyms[key]) && heardLower.includes(key))) {
@@ -373,26 +390,21 @@
         }
 
         if (isGame && isMatch) { 
-            // 再次檢查確保不會超過 29
-            if (koList.size < 29) {
-                document.getElementById('v-' + target).classList.add('ko'); 
-                koList.add(target); 
-                updateProgress(); 
-            }
+            const card = document.getElementById('v-' + target);
+            if(card) card.classList.add('ko');
+            koList.add(target); 
+            updateProgress(); 
         }
         
         showModal(isMatch, lastHeard || "(No sound)", target);
     }
 
     function showModal(isOk, heard, target) {
-        // 情緒價值滿滿的鼓勵語
         const compliments = ["AMAZING! 🌟", "YOU'RE A PRO! 🏆", "ABSOLUTELY PERFECT! 🔥", "INSPIRING! ✨", "OUTSTANDING! 💎", "YOU'VE GOT THIS! 🚀"];
         const randomEncouragement = compliments[Math.floor(Math.random() * compliments.length)];
-        
         document.getElementById('modal').style.display = 'flex';
         document.getElementById('m-icon').innerText = isOk ? "🎉" : "❌";
         document.getElementById('m-title').innerText = isOk ? "Brilliant!" : "Try Again";
-        
         if (isOk) {
             document.getElementById('m-msg').innerHTML = `<b style="font-size: 1.6rem; color: #10b981; display: block; margin: 10px 0;">${randomEncouragement}</b><span style="color: #666;">Your pronunciation is spot on!</span>`;
         } else {
